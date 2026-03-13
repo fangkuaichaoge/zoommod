@@ -497,29 +497,23 @@ static void DrawUI() {
     }
 
     ImVec2 bigButtonSize = ImVec2(200, 120);
-    bool isHolding = ImGui::Button(state.zooming ? "Zooming..." : "Hold", bigButtonSize);
+    bool buttonClicked = ImGui::Button(state.zooming ? "Zooming" : "Zoom", bigButtonSize);
     ImGui::PopStyleColor(2);
 
-    // Handle hold zoom
-    static bool wasHolding = false;
-    if (isHolding && !wasHolding) {
-        // Button pressed down
+    // Handle toggle zoom
+    if (buttonClicked) {
         std::lock_guard<std::mutex> lock(g_zoomMutex);
-        g_zoomState.zooming = true;
+        g_zoomState.zooming = !g_zoomState.zooming;
         if (g_zoomState.animated) {
-            uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-            g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
-        }
-    } else if (!isHolding && wasHolding) {
-        // Button released
-        std::lock_guard<std::mutex> lock(g_zoomMutex);
-        g_zoomState.zooming = false;
-        if (g_zoomState.animated) {
-            uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-            g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+            if (g_zoomState.zooming) {
+                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+            } else {
+                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+            }
         }
     }
-    wasHolding = isHolding;
 
     ImGui::Dummy(ImVec2(0, 20));
 
@@ -599,32 +593,26 @@ static void DrawUI() {
         }
 
         ImVec2 zoomButtonSize = ImVec2(100, 100);
-        bool isZoomHolding = ImGui::Button(state.zooming ? "Z" : "Z", zoomButtonSize);
+        bool zoomButtonClicked = ImGui::Button(state.zooming ? "Z" : "Z", zoomButtonSize);
         ImGui::PopStyleColor(2);
 
-        // Handle independent zoom button
-        static bool wasZoomHolding = false;
-        if (isZoomHolding && !wasZoomHolding) {
-            // Button pressed down
+        // Handle independent zoom button toggle
+        if (zoomButtonClicked) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
-            g_zoomState.zooming = true;
+            g_zoomState.zooming = !g_zoomState.zooming;
             if (g_zoomState.animated) {
-                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
-            }
-        } else if (!isZoomHolding && wasZoomHolding) {
-            // Button released
-            std::lock_guard<std::mutex> lock(g_zoomMutex);
-            g_zoomState.zooming = false;
-            if (g_zoomState.animated) {
-                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+                if (g_zoomState.zooming) {
+                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                    g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+                } else {
+                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                    g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+                }
             }
         }
-        wasZoomHolding = isZoomHolding;
 
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Hold to Zoom");
+            ImGui::SetTooltip("Toggle Zoom");
         }
 
         ImGui::End();
