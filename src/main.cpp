@@ -1,16 +1,3 @@
-/*
- * Portions of this file are derived from LeviLaunchroid
- * Repository: https://github.com/LiteLDev/LeviLaunchroid
- * Copyright 2024 LiteLDev / LeviMC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Modified by [fangkuaichaoge] 2026.
- */
 // ===================== System Header Files =====================
 #include <jni.h>
 #include <android/input.h>
@@ -464,7 +451,7 @@ static void DrawUI() {
     ImGuiIO& io = ImGui::GetIO();
     const float pad = 20;
     ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(350, 0), ImVec2(io.DisplaySize.x * 0.9f, io.DisplaySize.y * 0.8f));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 200), ImVec2(io.DisplaySize.x * 0.9f, io.DisplaySize.y * 0.4f));
 
     // Show a small button to reopen the window if it's closed
     if (!g_ShowUI) {
@@ -558,6 +545,8 @@ static void DrawUI() {
 
         // Zoom Level Slider
         ImGui::Text("Zoom Level");
+        ImGui::Dummy(ImVec2(0, 5));
+
         float zoomPercent = ((float)(state.maxZoom - state.zoomLevel) / (float)(state.maxZoom - state.minZoom)) * 100.0f;
         ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.35f, 0.55f, 0.85f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.45f, 0.65f, 0.95f, 1.0f));
@@ -693,10 +682,10 @@ static void Setup() {
     io.LogFilename = nullptr;
 
     float scale = (float)g_Height / 720.0f;
-    scale = std::clamp(scale, 1.6f, 4.0f);
+    scale = std::clamp(scale, 1.8f, 4.5f);
 
     ImFontConfig cfg;
-    cfg.SizePixels = 36 * scale;
+    cfg.SizePixels = 48 * scale;
     cfg.OversampleH = cfg.OversampleV = 2;
     cfg.PixelSnapH = true;
     g_UIFont = io.Fonts->AddFontDefault(&cfg);
