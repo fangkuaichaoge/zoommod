@@ -419,25 +419,25 @@ static void ForceStyle() {
 
 
 
-    s.WindowPadding = ImVec2(16, 16);
+    s.WindowPadding = ImVec2(12, 12);
 
-    s.FramePadding = ImVec2(10, 8);
+    s.FramePadding = ImVec2(8, 6);
 
-    s.ItemSpacing = ImVec2(10, 8);
+    s.ItemSpacing = ImVec2(8, 6);
 
-    s.ItemInnerSpacing = ImVec2(8, 6);
+    s.ItemInnerSpacing = ImVec2(6, 4);
 
-    s.TouchExtraPadding = ImVec2(6, 6);
+    s.TouchExtraPadding = ImVec2(4, 4);
 
-    s.IndentSpacing = 24;
+    s.IndentSpacing = 20;
 
-    s.ColumnsMinSpacing = 8;
+    s.ColumnsMinSpacing = 6;
 
 
 
-    s.ScrollbarSize = 14;
+    s.ScrollbarSize = 12;
 
-    s.GrabMinSize = 12;
+    s.GrabMinSize = 10;
 
 }
 
@@ -451,7 +451,7 @@ static void DrawUI() {
     ImGuiIO& io = ImGui::GetIO();
     const float pad = 20;
     ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 200), ImVec2(io.DisplaySize.x * 0.9f, io.DisplaySize.y * 0.4f));
+    // Window will auto-resize to fit content
 
     // Show a small button to reopen the window if it's closed
     if (!g_ShowUI) {
@@ -471,23 +471,33 @@ static void DrawUI() {
     // Main window is open
     ImGui::Begin("Zoom Mod", &g_ShowUI,
         ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoFocusOnAppearing);
+        ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoCollapse);
 
-    // Title
+    // Title with close button
     float titleWidth = ImGui::CalcTextSize("Zoom Mod").x;
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleWidth) * 0.5f);
     ImGui::PushFont(g_UIFont);
     ImGui::SetWindowFontScale(1.3f);
     ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zoom Mod");
     ImGui::SetWindowFontScale(1.0f);
+    
+    // Custom close button
+    ImGui::SameLine(ImGui::GetWindowWidth() - 35);
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.93f, 0.88f, 0.98f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.98f, 0.95f, 1.0f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.55f, 0.7f, 1.0f));
+    if (ImGui::Button("✕", ImVec2(24, 24))) {
+        g_ShowUI = false;
+    }
+    ImGui::PopStyleColor(3);
     ImGui::PopFont();
-    ImGui::Dummy(ImVec2(0, 15));
+    ImGui::Dummy(ImVec2(0, 10));
 
     ZoomState state;
     { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
 
     // Large Zoom Button (Outside settings)
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 200) * 0.5f);
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 160) * 0.5f);
     if (state.zooming) {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
@@ -496,7 +506,7 @@ static void DrawUI() {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
     }
 
-    ImVec2 bigButtonSize = ImVec2(200, 120);
+    ImVec2 bigButtonSize = ImVec2(160, 80);
     bool buttonClicked = ImGui::Button(state.zooming ? "Zooming" : "Zoom", bigButtonSize);
     ImGui::PopStyleColor(2);
 
@@ -515,10 +525,10 @@ static void DrawUI() {
         }
     }
 
-    ImGui::Dummy(ImVec2(0, 20));
+    ImGui::Dummy(ImVec2(0, 8));
 
     // Settings Section
-    ImGui::BeginChild("Settings", ImVec2(-1, 280), true);
+    ImGui::BeginChild("Settings", ImVec2(0, 0), true);
     {
         // Enable/Disable
         ImGui::AlignTextToFramePadding();
@@ -532,7 +542,7 @@ static void DrawUI() {
         ImGui::Text(state.enabled ? "Active" : "Inactive");
         ImGui::PopStyleColor();
 
-        ImGui::Dummy(ImVec2(0, 12));
+        ImGui::Dummy(ImVec2(0, 8));
 
         // Animated
         ImGui::AlignTextToFramePadding();
@@ -541,7 +551,7 @@ static void DrawUI() {
             g_zoomState.animated = state.animated;
         }
 
-        ImGui::Dummy(ImVec2(0, 12));
+        ImGui::Dummy(ImVec2(0, 8));
 
         // Zoom Level Slider
         ImGui::Text("Zoom Level");
@@ -557,7 +567,7 @@ static void DrawUI() {
         }
         ImGui::PopStyleColor(2);
 
-        ImGui::Dummy(ImVec2(0, 15));
+        ImGui::Dummy(ImVec2(0, 10));
 
         // Status
         ImGui::Separator();
@@ -683,10 +693,10 @@ static void Setup() {
     io.LogFilename = nullptr;
 
     float scale = (float)g_Height / 720.0f;
-    scale = std::clamp(scale, 1.8f, 4.5f);
+    scale = std::clamp(scale, 1.2f, 2.8f);
 
     ImFontConfig cfg;
-    cfg.SizePixels = 48 * scale;
+    cfg.SizePixels = 24 * scale;
     cfg.OversampleH = cfg.OversampleV = 2;
     cfg.PixelSnapH = true;
     g_UIFont = io.Fonts->AddFontDefault(&cfg);
