@@ -468,7 +468,7 @@ static void DrawUI() {
 
     ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - buttonWidth) * 0.5f);
 
-    const char* buttonLabel = state.zooming ? "● Zooming" : "○ Zoom";
+    const char* buttonLabel = state.zooming ? "Zooming" : "Zoom";
     if (ZoomButton(buttonLabel, state.zooming, ImVec2(buttonWidth, 52))) {
         std::lock_guard<std::mutex> lock(g_zoomMutex);
         g_zoomState.zooming = !g_zoomState.zooming;
@@ -523,20 +523,13 @@ static void DrawUI() {
         ImGui::Dummy(ImVec2(0, 10));
 
         // Row 2: Zoom slider
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Zoom");
-        ImGui::SameLine();
-
         float zoomPercent = ((float)(state.maxZoom - state.zoomLevel) / (float)(state.maxZoom - state.minZoom)) * 100.0f;
-        float sliderWidth = ImGui::GetContentRegionAvail().x - 60;
-        ImGui::PushItemWidth(sliderWidth);
-
+        
+        ImGui::PushItemWidth(-1);
         ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
 
-        char sliderLabel[32];
-        snprintf(sliderLabel, sizeof(sliderLabel), "%.0f%%", zoomPercent);
-        if (ImGui::SliderFloat("##ZoomLevel", &zoomPercent, 0.0f, 100.0f, sliderLabel)) {
+        if (ImGui::SliderFloat("##ZoomLevel", &zoomPercent, 0.0f, 100.0f, "%.0f%%")) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.zoomLevel = state.maxZoom - (uint64_t)((zoomPercent / 100.0f) * (float)(state.maxZoom - state.minZoom));
         }
