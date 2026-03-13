@@ -1,6 +1,7 @@
 // ===================== System Header Files =====================
 #include <jni.h>
 #include <android/input.h>
+#include <android/log.h>
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 #include <pthread.h>
