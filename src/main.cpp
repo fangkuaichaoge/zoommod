@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <sys/mman.h>
 #include <fstream>
+#include <algorithm>
 
 // ===================== Project Header Files =====================
 #include "pl/Hook.h"
@@ -268,197 +269,151 @@ static EGLSurface g_TargetSurface = EGL_NO_SURFACE;
 static ImFont* g_UIFont = nullptr;
 
 // ===================== Theme Style =====================
+static float g_FontScale = 1.0f;
 
-static void ForceStyle() {
-
+static void SetupStyle() {
     ImGuiStyle& s = ImGui::GetStyle();
-
     ImVec4* c = s.Colors;
 
-
-
     // 淡紫色主题
+    const ImVec4 purplePrimary(0.6f, 0.4f, 0.85f, 1.0f);
+    const ImVec4 purpleDark(0.45f, 0.3f, 0.7f, 1.0f);
+    const ImVec4 purpleLight(0.75f, 0.55f, 0.95f, 1.0f);
+    const ImVec4 purpleMuted(0.55f, 0.45f, 0.75f, 1.0f);
+    const ImVec4 bgBase(0.94f, 0.90f, 0.98f, 0.96f);
+    const ImVec4 bgSecondary(0.97f, 0.94f, 1.0f, 1.0f);
+    const ImVec4 textMain(0.28f, 0.22f, 0.38f, 1.0f);
+    const ImVec4 textMuted(0.55f, 0.48f, 0.62f, 1.0f);
 
-    ImVec4 purplePrimary = ImVec4(0.6f, 0.4f, 0.85f, 1.0f);
-
-    ImVec4 purpleDark = ImVec4(0.45f, 0.3f, 0.7f, 1.0f);
-
-    ImVec4 purpleLight = ImVec4(0.75f, 0.55f, 0.95f, 1.0f);
-
-    ImVec4 bgBase = ImVec4(0.93f, 0.88f, 0.98f, 0.98f);
-
-    ImVec4 bgSecondary = ImVec4(0.96f, 0.92f, 1.0f, 1.0f);
-
-
-
+    // 基础颜色
     c[ImGuiCol_WindowBg] = bgBase;
-
     c[ImGuiCol_ChildBg] = bgSecondary;
-
-    c[ImGuiCol_PopupBg] = bgSecondary;
-
+    c[ImGuiCol_PopupBg] = ImVec4(0.96f, 0.93f, 0.99f, 0.98f);
     c[ImGuiCol_FrameBg] = bgSecondary;
-
-    c[ImGuiCol_FrameBgHovered] = ImVec4(0.98f, 0.95f, 1.0f, 1.0f);
-
-    c[ImGuiCol_FrameBgActive] = ImVec4(1.0f, 0.97f, 1.0f, 1.0f);
-
-
-
+    c[ImGuiCol_FrameBgHovered] = ImVec4(0.99f, 0.96f, 1.0f, 1.0f);
+    c[ImGuiCol_FrameBgActive] = ImVec4(1.0f, 0.98f, 1.0f, 1.0f);
     c[ImGuiCol_TitleBg] = bgSecondary;
-
-    c[ImGuiCol_TitleBgActive] = ImVec4(0.95f, 0.90f, 1.0f, 1.0f);
-
-    c[ImGuiCol_TitleBgCollapsed] = ImVec4(0.94f, 0.89f, 0.99f, 1.0f);
-
-
-
+    c[ImGuiCol_TitleBgActive] = purpleLight;
+    c[ImGuiCol_TitleBgCollapsed] = ImVec4(0.95f, 0.91f, 0.99f, 1.0f);
     c[ImGuiCol_MenuBarBg] = bgSecondary;
 
-
-
-    c[ImGuiCol_ScrollbarBg] = ImVec4(0.90f, 0.85f, 0.95f, 1.0f);
-
-    c[ImGuiCol_ScrollbarGrab] = purplePrimary;
-
-    c[ImGuiCol_ScrollbarGrabHovered] = purpleLight;
-
+    // 滚动条
+    c[ImGuiCol_ScrollbarBg] = ImVec4(0.92f, 0.88f, 0.96f, 0.5f);
+    c[ImGuiCol_ScrollbarGrab] = purpleMuted;
+    c[ImGuiCol_ScrollbarGrabHovered] = purplePrimary;
     c[ImGuiCol_ScrollbarGrabActive] = purpleDark;
 
-
-
+    // 控件
     c[ImGuiCol_CheckMark] = purplePrimary;
-
-
-
     c[ImGuiCol_SliderGrab] = purplePrimary;
-
     c[ImGuiCol_SliderGrabActive] = purpleLight;
-
-
-
     c[ImGuiCol_Button] = purplePrimary;
-
     c[ImGuiCol_ButtonHovered] = purpleLight;
-
     c[ImGuiCol_ButtonActive] = purpleDark;
 
-
-
-    c[ImGuiCol_Header] = ImVec4(0.95f, 0.90f, 1.0f, 0.8f);
-
-    c[ImGuiCol_HeaderHovered] = ImVec4(0.98f, 0.93f, 1.0f, 0.9f);
-
+    // Header
+    c[ImGuiCol_Header] = ImVec4(0.96f, 0.92f, 1.0f, 0.6f);
+    c[ImGuiCol_HeaderHovered] = ImVec4(0.98f, 0.95f, 1.0f, 0.8f);
     c[ImGuiCol_HeaderActive] = purplePrimary;
 
-
-
-    c[ImGuiCol_ResizeGrip] = ImVec4(0.3f, 0.35f, 0.4f, 0.8f);
-
+    // 拖拽 grip
+    c[ImGuiCol_ResizeGrip] = ImVec4(0.6f, 0.5f, 0.7f, 0.5f);
     c[ImGuiCol_ResizeGripHovered] = purplePrimary;
-
     c[ImGuiCol_ResizeGripActive] = purpleDark;
 
-
-
+    // Tab
     c[ImGuiCol_Tab] = bgSecondary;
-
-    c[ImGuiCol_TabHovered] = ImVec4(0.97f, 0.93f, 1.0f, 0.8f);
-
+    c[ImGuiCol_TabHovered] = purpleLight;
     c[ImGuiCol_TabActive] = purplePrimary;
-
     c[ImGuiCol_TabUnfocused] = bgSecondary;
+    c[ImGuiCol_TabUnfocusedActive] = purpleMuted;
 
-    c[ImGuiCol_TabUnfocusedActive] = ImVec4(0.95f, 0.90f, 1.0f, 1.0f);
+    // 文本
+    c[ImGuiCol_Text] = textMain;
+    c[ImGuiCol_TextDisabled] = textMuted;
 
-
-
-    c[ImGuiCol_Text] = ImVec4(0.25f, 0.2f, 0.35f, 1.0f);
-
-    c[ImGuiCol_TextDisabled] = ImVec4(0.6f, 0.55f, 0.65f, 1.0f);
-
-
-
-    c[ImGuiCol_Separator] = ImVec4(0.7f, 0.65f, 0.8f, 0.5f);
-
-    c[ImGuiCol_SeparatorHovered] = ImVec4(0.6f, 0.55f, 0.7f, 0.7f);
-
-    c[ImGuiCol_SeparatorActive] = ImVec4(0.5f, 0.45f, 0.6f, 0.9f);
-
-
-
-    c[ImGuiCol_Border] = ImVec4(0.75f, 0.70f, 0.85f, 0.5f);
-
+    // 分隔线
+    c[ImGuiCol_Separator] = ImVec4(0.7f, 0.62f, 0.82f, 0.4f);
+    c[ImGuiCol_SeparatorHovered] = purplePrimary;
+    c[ImGuiCol_SeparatorActive] = purpleDark;
+    c[ImGuiCol_Border] = ImVec4(0.75f, 0.68f, 0.85f, 0.3f);
     c[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
+    // 导航
+    c[ImGuiCol_NavHighlight] = purpleLight;
+    c[ImGuiCol_NavWindowingHighlight] = ImVec4(0.5f, 0.7f, 1.0f, 0.5f);
+    c[ImGuiCol_NavWindowingDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.2f);
+    c[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.35f);
 
+    // 圆角 (基于字体缩放)
+    float roundScale = g_FontScale;
+    s.WindowRounding = (float)(int)(10.0f * roundScale);
+    s.ChildRounding = (float)(int)(8.0f * roundScale);
+    s.FrameRounding = (float)(int)(6.0f * roundScale);
+    s.GrabRounding = (float)(int)(6.0f * roundScale);
+    s.ScrollbarRounding = (float)(int)(6.0f * roundScale);
+    s.PopupRounding = (float)(int)(8.0f * roundScale);
+    s.TabRounding = (float)(int)(6.0f * roundScale);
 
-    c[ImGuiCol_NavHighlight] = ImVec4(0.4f, 0.6f, 0.9f, 0.6f);
+    // 间距 (基于字体缩放)
+    s.WindowPadding = ImVec2(14.0f * roundScale, 12.0f * roundScale);
+    s.FramePadding = ImVec2(10.0f * roundScale, 8.0f * roundScale);
+    s.ItemSpacing = ImVec2(10.0f * roundScale, 8.0f * roundScale);
+    s.ItemInnerSpacing = ImVec2(8.0f * roundScale, 6.0f * roundScale);
+    s.TouchExtraPadding = ImVec2(4.0f * roundScale, 4.0f * roundScale);
+    s.IndentSpacing = 22.0f * roundScale;
+    s.ColumnsMinSpacing = 8.0f * roundScale;
 
-    c[ImGuiCol_NavWindowingHighlight] = ImVec4(0.4f, 0.6f, 0.9f, 0.4f);
-
-    c[ImGuiCol_NavWindowingDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.2f);
-
-    c[ImGuiCol_ModalWindowDimBg] = ImVec4(0.7f, 0.7f, 0.7f, 0.4f);
-
-
-
-    s.WindowRounding = 12;
-
-    s.ChildRounding = 8;
-
-    s.FrameRounding = 6;
-
-    s.GrabRounding = 6;
-
-    s.ScrollbarRounding = 6;
-
-    s.PopupRounding = 8;
-
-    s.TabRounding = 6;
-
-
-
-    s.WindowPadding = ImVec2(12, 12);
-
-    s.FramePadding = ImVec2(8, 6);
-
-    s.ItemSpacing = ImVec2(8, 6);
-
-    s.ItemInnerSpacing = ImVec2(6, 4);
-
-    s.TouchExtraPadding = ImVec2(4, 4);
-
-    s.IndentSpacing = 20;
-
-    s.ColumnsMinSpacing = 6;
-
-
-
-    s.ScrollbarSize = 12;
-
-    s.GrabMinSize = 10;
-
+    // 大小
+    s.ScrollbarSize = (float)(int)(14.0f * roundScale);
+    s.GrabMinSize = (float)(int)(12.0f * roundScale);
 }
 
 // ===================== UI Interface =====================
 static bool g_ShowUI = true;
 static bool g_Expanded = true;
 
+// 辅助函数：带悬停提示的按钮
+static inline bool IconButton(const char* label, const ImVec4& color, const ImVec4& hoverColor, const ImVec2& size, const char* tooltip = nullptr) {
+    ImGui::PushStyleColor(ImGuiCol_Button, color);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoverColor);
+    bool clicked = ImGui::Button(label, size);
+    ImGui::PopStyleColor(2);
+    if (tooltip && ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", tooltip);
+    }
+    return clicked;
+}
+
+// 辅助函数：带颜色状态的缩放按钮
+static bool ZoomButton(const char* label, bool isActive, const ImVec2& size) {
+    if (isActive) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.4f, 0.8f, 1.0f));
+    } else {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
+    }
+    bool clicked = ImGui::Button(label, size);
+    ImGui::PopStyleColor(2);
+    return clicked;
+}
+
 static void DrawUI() {
-    ForceStyle();
     if (g_UIFont) ImGui::PushFont(g_UIFont);
 
     ImGuiIO& io = ImGui::GetIO();
-    const float pad = 20;
-    ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(480, 80), ImVec2(io.DisplaySize.x * 0.9f, io.DisplaySize.y * 0.4f));
 
-    // Show a small button to reopen the window if it's closed
+    // ==================== Collapsed State: Small Button ====================
     if (!g_ShowUI) {
-        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
-        ImGui::Begin("##ReopenZoom", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing);
-        if (ImGui::Button("[Z]", ImVec2(45, 45))) {
+        ImGui::SetNextWindowPos(ImVec2(12, 12), ImGuiCond_Always);
+        ImGui::Begin("##ReopenZoom", nullptr,
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoFocusOnAppearing |
+            ImGuiWindowFlags_NoBackground);
+
+        if (ZoomButton("[Z]", false, ImVec2(48, 48))) {
             g_ShowUI = true;
         }
         if (ImGui::IsItemHovered()) {
@@ -469,165 +424,185 @@ static void DrawUI() {
         return;
     }
 
-    // Main window is open
+    // ==================== Main Window ====================
+    ImGui::SetNextWindowPos(ImVec2(16, 16), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(320, 0), ImVec2(io.DisplaySize.x - 32, io.DisplaySize.y * 0.5f));
+
     ImGui::Begin("Zoom Mod", &g_ShowUI,
-        ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_AlwaysAutoResize |
+        ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoFocusOnAppearing);
 
+    // Get state (thread-safe)
     ZoomState state;
-    { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
+    {
+        std::lock_guard<std::mutex> lock(g_zoomMutex);
+        state = g_zoomState;
+    }
 
-    // Header row
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 0));
-    
+    // ----- Title Bar -----
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 0));
+
     // Collapse/Expand button
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.93f, 0.88f, 0.98f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.98f, 0.95f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.55f, 0.7f, 1.0f));
-    if (ImGui::Button(g_Expanded ? "−" : "+", ImVec2(26, 26))) {
+    if (IconButton(g_Expanded ? "−" : "+",
+            ImVec4(0.92f, 0.86f, 0.98f, 1.0f),
+            ImVec4(0.96f, 0.92f, 1.0f, 1.0f),
+            ImVec2(32, 32),
+            g_Expanded ? "Collapse" : "Expand")) {
         g_Expanded = !g_Expanded;
     }
-    ImGui::PopStyleColor(3);
-    
-    // Title
     ImGui::SameLine();
-    ImGui::PushFont(g_UIFont);
-    ImGui::SetWindowFontScale(1.2f);
-    ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zoom Mod");
-    ImGui::SetWindowFontScale(1.0f);
-    ImGui::PopFont();
+
+    // Title text
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+    ImGui::Text("Zoom Mod");
+    ImGui::PopStyleColor();
     ImGui::PopStyleVar();
 
-    ImGui::Dummy(ImVec2(0, 8));
+    // ----- Main Zoom Button -----
+    ImGui::Dummy(ImVec2(0, 6));
 
-    // Zoom Button (always visible)
-    float windowWidth = ImGui::GetWindowWidth();
-    float buttonWidth = windowWidth * 0.4f;
-    if (buttonWidth < 120) buttonWidth = 120;
-    ImGui::SetCursorPosX((windowWidth - buttonWidth) * 0.5f);
-    
-    if (state.zooming) {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
-    } else {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
-    }
+    float windowWidth = ImGui::GetContentRegionAvail().x;
+    float buttonWidth = windowWidth;
+    if (buttonWidth > 280) buttonWidth = 280;
 
-    bool buttonClicked = ImGui::Button(state.zooming ? "Zooming" : "Zoom", ImVec2(buttonWidth, 60));
-    ImGui::PopStyleColor(2);
+    ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - buttonWidth) * 0.5f);
 
-    if (buttonClicked) {
+    const char* buttonLabel = state.zooming ? "● Zooming" : "○ Zoom";
+    if (ZoomButton(buttonLabel, state.zooming, ImVec2(buttonWidth, 52))) {
         std::lock_guard<std::mutex> lock(g_zoomMutex);
         g_zoomState.zooming = !g_zoomState.zooming;
+
         if (g_zoomState.animated) {
+            uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+            int duration = clamp(100, (int)(diff / 150000), 250);
+
             if (g_zoomState.zooming) {
-                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+                g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, duration);
             } else {
-                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+                g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, duration);
             }
         }
     }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Toggle zoom state");
+    }
 
+    // ----- Settings Panel (when expanded) -----
     if (g_Expanded) {
-        ImGui::Dummy(ImVec2(0, 10));
-        
-        // Settings section (horizontal layout)
-        ImGui::BeginChild("Settings", ImVec2(0, 0), true);
-        
-        // Row 1: Enabled and Animated (side by side)
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 8));
-        
-        // Enabled
+        ImGui::Dummy(ImVec2(0, 12));
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0, 8));
+
+        // Row 1: Enabled and Animated checkboxes
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(24, 8));
+
         ImGui::AlignTextToFramePadding();
-        if (ImGui::Checkbox("Enabled", &state.enabled)) {
+        if (ImGui::Checkbox("##Enabled", &state.enabled)) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.enabled = state.enabled;
-            if (!state.enabled) g_zoomState.zooming = false;
+            if (!state.enabled) {
+                g_zoomState.zooming = false;
+            }
         }
-        
-        // Animated
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable/Disable zoom");
+        ImGui::SameLine();
+        ImGui::Text("Enabled");
+
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
-        if (ImGui::Checkbox("Animated", &state.animated)) {
+        if (ImGui::Checkbox("##Animated", &state.animated)) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.animated = state.animated;
         }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable/Disable smooth animation");
+        ImGui::SameLine();
+        ImGui::Text("Animated");
+
         ImGui::PopStyleVar();
-        
-        ImGui::Dummy(ImVec2(0, 8));
-        
-        // Row 2: Zoom Level slider
+        ImGui::Dummy(ImVec2(0, 10));
+
+        // Row 2: Zoom slider
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Zoom");
+        ImGui::SameLine();
+
         float zoomPercent = ((float)(state.maxZoom - state.zoomLevel) / (float)(state.maxZoom - state.minZoom)) * 100.0f;
-        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 50);
+        float sliderWidth = ImGui::GetContentRegionAvail().x - 60;
+        ImGui::PushItemWidth(sliderWidth);
+
         ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
-        if (ImGui::SliderFloat("##zoomlevel", &zoomPercent, 0.0f, 100.0f, "Zoom: %.0f%%")) {
+
+        char sliderLabel[32];
+        snprintf(sliderLabel, sizeof(sliderLabel), "%.0f%%", zoomPercent);
+        if (ImGui::SliderFloat("##ZoomLevel", &zoomPercent, 0.0f, 100.0f, sliderLabel)) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.zoomLevel = state.maxZoom - (uint64_t)((zoomPercent / 100.0f) * (float)(state.maxZoom - state.minZoom));
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Adjust zoom level");
+        }
+
         ImGui::PopStyleColor(2);
         ImGui::PopItemWidth();
-        
-        ImGui::Dummy(ImVec2(0, 8));
-        
+        ImGui::Dummy(ImVec2(0, 6));
+
         // Row 3: Status
         ImGui::Separator();
-        ImGui::Dummy(ImVec2(0, 6));
-        float statusText = ImGui::CalcTextSize("Status: Normal").x;
-        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - statusText) * 0.5f);
-        ImGui::Text("Status: ");
+        ImGui::Dummy(ImVec2(0, 8));
+
+        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Status").x - ImGui::CalcTextSize("Normal").x - 8) * 0.5f);
+        ImGui::TextColored(ImVec4(0.55f, 0.48f, 0.62f, 1.0f), "Status: ");
         ImGui::SameLine();
         if (state.zooming) {
             ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zooming");
         } else {
-            ImGui::TextColored(ImVec4(0.6f, 0.55f, 0.7f, 1.0f), "Normal");
+            ImGui::TextColored(ImVec4(0.55f, 0.48f, 0.62f, 1.0f), "Normal");
         }
-        
-        ImGui::EndChild();
+
+        // Sync state back to global
+        {
+            std::lock_guard<std::mutex> lock(g_zoomMutex);
+            g_zoomState.enabled = state.enabled;
+            g_zoomState.animated = state.animated;
+        }
     }
 
     ImGui::End();
 
-    // Independent Zoom Button (Always visible)
+    // ==================== Independent Zoom Button (Bottom Right) ====================
     if (g_ShowUI) {
-        ZoomState state;
-        { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
-
-        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 110, io.DisplaySize.y - 110), ImGuiCond_Always);
-        ImGui::Begin("##IndependentZoom", nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground);
-
-        if (state.zooming) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
-        } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
+        ZoomState btnState;
+        {
+            std::lock_guard<std::mutex> lock(g_zoomMutex);
+            btnState = g_zoomState;
         }
 
-        bool zoomButtonClicked = ImGui::Button("Z", ImVec2(80, 80));
-        ImGui::PopStyleColor(2);
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 92, io.DisplaySize.y - 92), ImGuiCond_Always);
+        ImGui::Begin("##IndependentZoom", nullptr,
+            ImGuiWindowFlags_NoDecoration |
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoFocusOnAppearing |
+            ImGuiWindowFlags_NoBackground);
 
-        if (zoomButtonClicked) {
+        if (ZoomButton("Z", btnState.zooming, ImVec2(72, 72))) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.zooming = !g_zoomState.zooming;
+
             if (g_zoomState.animated) {
+                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                int duration = clamp(100, (int)(diff / 150000), 250);
+
                 if (g_zoomState.zooming) {
-                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                    g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+                    g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, duration);
                 } else {
-                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                    g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+                    g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, duration);
                 }
             }
         }
-
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Toggle Zoom");
+            ImGui::SetTooltip("Toggle Zoom (Click)");
         }
 
         ImGui::End();
@@ -635,55 +610,10 @@ static void DrawUI() {
 
     if (g_UIFont) ImGui::PopFont();
 }
-    
-            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 120, io.DisplaySize.y - 120), ImGuiCond_Always);
-            ImGui::Begin("##IndependentZoom", nullptr,
-                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-                ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground);
-    
-            if (state.zooming) {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
-            } else {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
-            }
-    
-            ImVec2 zoomButtonSize = ImVec2(100, 100);
-            bool zoomButtonClicked = ImGui::Button(state.zooming ? "Z" : "Z", zoomButtonSize);
-            ImGui::PopStyleColor(2);
-    
-            // Handle independent zoom button toggle
-            if (zoomButtonClicked) {
-                std::lock_guard<std::mutex> lock(g_zoomMutex);
-                g_zoomState.zooming = !g_zoomState.zooming;
-                if (g_zoomState.animated) {
-                    if (g_zoomState.zooming) {
-                        uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                        g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
-                    } else {
-                        uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                        g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
-                    }
-                }
-            }
-    
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Toggle Zoom");
-            }
-    
-            ImGui::End();
-        }
-    
-        if (g_UIFont) ImGui::PopFont();
-    
-        }
-    
-        
-    
-        // ===================== GL State Protection =====================
-    struct GLState {
-        GLint prog, tex, aTex, aBuf, eBuf, vao, fbo, vp[4], sc[4], bSrc, bDst, bSrcA, bDstA;
+
+// ===================== GL State Protection =====================
+struct GLState {
+    GLint prog, tex, aTex, aBuf, eBuf, vao, fbo, vp[4], sc[4], bSrc, bDst, bSrcA, bDstA;
     GLboolean blend, cull, depth, scissor, stencil, dither;
     GLint frontFace, activeTexture;
 };
@@ -739,11 +669,13 @@ static void Setup() {
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
-    float scale = (float)g_Height / 720.0f;
-    scale = std::clamp(scale, 1.2f, 2.8f);
+    // 根据屏幕高度计算字体缩放比例 (基准 720p)
+    float baseScale = (float)g_Height / 720.0f;
+    g_FontScale = std::clamp(baseScale, 1.0f, 2.0f);
 
+    // 设置字体大小 (基准 20px，根据缩放调整)
     ImFontConfig cfg;
-    cfg.SizePixels = 24 * scale;
+    cfg.SizePixels = (float)(int)(20.0f * g_FontScale);
     cfg.OversampleH = cfg.OversampleV = 2;
     cfg.PixelSnapH = true;
     g_UIFont = io.Fonts->AddFontDefault(&cfg);
@@ -751,7 +683,7 @@ static void Setup() {
     ImGui_ImplAndroid_Init(nullptr);
     ImGui_ImplOpenGL3_Init("#version 300 es");
 
-    ForceStyle();
+    SetupStyle();
     g_Initialized = true;
 }
 
