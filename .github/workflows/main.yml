@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - uses: nttld/setup-ndk@v1
+      id: ndk
+      with:
+        ndk-version: r26b
+        
+    - name: Build
+      run: |
+        mkdir build
+        cmake -B build \
+          -DCMAKE_TOOLCHAIN_FILE=${{ steps.ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
+          -DANDROID_ABI=arm64-v8a \
+          -DANDROID_PLATFORM=android-24 \
+          -DCMAKE_BUILD_TYPE=Release
+        cmake --build build -j$(nproc)
+        
+    - name: Check output
+      run: |
+        echo "=== 检查构建输出 ==="
+        find build -name "*.so" -type f
+        ls -la build/output/ 2>/dev/null || echo "output目录不存在"
+        
+    - uses: actions/upload-artifact@v4
+      with:
+        name: libZoomMod
+        path: build/output/libZoomMod.so
+        if-no-files-found: error
