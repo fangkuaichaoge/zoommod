@@ -486,8 +486,45 @@ static void DrawUI() {
     ZoomState state;
     { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
 
+    // Large Zoom Button (Outside settings)
+    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 200) * 0.5f);
+    if (state.zooming) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.4f, 0.8f, 1.0f));
+    } else {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.65f, 0.45f, 0.95f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.6f, 0.98f, 1.0f));
+    }
+
+    ImVec2 bigButtonSize = ImVec2(200, 120);
+    bool isHolding = ImGui::Button(state.zooming ? "Zooming..." : "Hold", bigButtonSize);
+    ImGui::PopStyleColor(2);
+
+    // Handle hold zoom
+    static bool wasHolding = false;
+    if (isHolding && !wasHolding) {
+        // Button pressed down
+        std::lock_guard<std::mutex> lock(g_zoomMutex);
+        g_zoomState.zooming = true;
+        if (g_zoomState.animated) {
+            uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+            g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+        }
+    } else if (!isHolding && wasHolding) {
+        // Button released
+        std::lock_guard<std::mutex> lock(g_zoomMutex);
+        g_zoomState.zooming = false;
+        if (g_zoomState.animated) {
+            uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+            g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+        }
+    }
+    wasHolding = isHolding;
+
+    ImGui::Dummy(ImVec2(0, 20));
+
     // Settings Section
-    ImGui::BeginChild("Settings", ImVec2(-1, 0), false, ImGuiWindowFlags_NoScrollbar);
+    ImGui::BeginChild("Settings", ImVec2(-1, 280), true);
     {
         // Enable/Disable
         ImGui::AlignTextToFramePadding();
@@ -525,53 +562,12 @@ static void DrawUI() {
 
         ImGui::Dummy(ImVec2(0, 15));
 
-        // Zoom Hold Button
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2(0, 10));
-
-        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize("Hold to Zoom").x) * 0.5f);
-        ImGui::TextColored(ImVec4(0.7f, 0.6f, 0.9f, 1.0f), "Hold to Zoom");
-        ImGui::Dummy(ImVec2(0, 8));
-
-        ImVec2 buttonSize = ImVec2(-1, 65);
-        if (state.zooming) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.4f, 0.8f, 1.0f));
-        } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.65f, 0.45f, 0.95f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.6f, 0.98f, 1.0f));
-        }
-        bool isHolding = ImGui::Button(state.zooming ? "Zooming..." : "Hold to Zoom", buttonSize);
-        ImGui::PopStyleColor(2);
-
-        // Handle hold zoom
-        static bool wasHolding = false;
-        if (isHolding && !wasHolding) {
-            // Button pressed down
-            std::lock_guard<std::mutex> lock(g_zoomMutex);
-            g_zoomState.zooming = true;
-            if (g_zoomState.animated) {
-                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
-            }
-        } else if (!isHolding && wasHolding) {
-            // Button released
-            std::lock_guard<std::mutex> lock(g_zoomMutex);
-            g_zoomState.zooming = false;
-            if (g_zoomState.animated) {
-                uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
-            }
-        }
-        wasHolding = isHolding;
-
-        ImGui::Dummy(ImVec2(0, 12));
-
         // Status
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0, 8));
 
-        ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize("Status: Normal").x) * 0.5f);
+        float statusText = ImGui::CalcTextSize("Status: Normal").x;
+        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - statusText) * 0.5f);
         ImGui::Text("Status: ");
         ImGui::SameLine();
         if (state.zooming) {
