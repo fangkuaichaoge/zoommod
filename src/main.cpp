@@ -277,17 +277,17 @@ static void ForceStyle() {
 
 
 
-    // 深色主题
+    // 淡紫色主题
 
-    ImVec4 bluePrimary = ImVec4(0.3f, 0.5f, 0.8f, 1.0f);
+    ImVec4 purplePrimary = ImVec4(0.6f, 0.4f, 0.85f, 1.0f);
 
-    ImVec4 blueDark = ImVec4(0.2f, 0.35f, 0.6f, 1.0f);
+    ImVec4 purpleDark = ImVec4(0.45f, 0.3f, 0.7f, 1.0f);
 
-    ImVec4 blueLight = ImVec4(0.4f, 0.65f, 0.95f, 1.0f);
+    ImVec4 purpleLight = ImVec4(0.75f, 0.55f, 0.95f, 1.0f);
 
-    ImVec4 bgBase = ImVec4(0.12f, 0.14f, 0.17f, 0.95f);
+    ImVec4 bgBase = ImVec4(0.93f, 0.88f, 0.98f, 0.98f);
 
-    ImVec4 bgSecondary = ImVec4(0.15f, 0.17f, 0.20f, 1.0f);
+    ImVec4 bgSecondary = ImVec4(0.96f, 0.92f, 1.0f, 1.0f);
 
 
 
@@ -299,17 +299,17 @@ static void ForceStyle() {
 
     c[ImGuiCol_FrameBg] = bgSecondary;
 
-    c[ImGuiCol_FrameBgHovered] = ImVec4(0.20f, 0.22f, 0.25f, 1.0f);
+    c[ImGuiCol_FrameBgHovered] = ImVec4(0.98f, 0.95f, 1.0f, 1.0f);
 
-    c[ImGuiCol_FrameBgActive] = ImVec4(0.25f, 0.27f, 0.30f, 1.0f);
+    c[ImGuiCol_FrameBgActive] = ImVec4(1.0f, 0.97f, 1.0f, 1.0f);
 
 
 
     c[ImGuiCol_TitleBg] = bgSecondary;
 
-    c[ImGuiCol_TitleBgActive] = ImVec4(0.20f, 0.22f, 0.25f, 1.0f);
+    c[ImGuiCol_TitleBgActive] = ImVec4(0.95f, 0.90f, 1.0f, 1.0f);
 
-    c[ImGuiCol_TitleBgCollapsed] = ImVec4(0.18f, 0.20f, 0.23f, 1.0f);
+    c[ImGuiCol_TitleBgCollapsed] = ImVec4(0.94f, 0.89f, 0.99f, 1.0f);
 
 
 
@@ -317,77 +317,77 @@ static void ForceStyle() {
 
 
 
-    c[ImGuiCol_ScrollbarBg] = ImVec4(0.10f, 0.12f, 0.15f, 1.0f);
+    c[ImGuiCol_ScrollbarBg] = ImVec4(0.90f, 0.85f, 0.95f, 1.0f);
 
-    c[ImGuiCol_ScrollbarGrab] = bluePrimary;
+    c[ImGuiCol_ScrollbarGrab] = purplePrimary;
 
-    c[ImGuiCol_ScrollbarGrabHovered] = blueLight;
+    c[ImGuiCol_ScrollbarGrabHovered] = purpleLight;
 
-    c[ImGuiCol_ScrollbarGrabActive] = blueDark;
-
-
-
-    c[ImGuiCol_CheckMark] = bluePrimary;
+    c[ImGuiCol_ScrollbarGrabActive] = purpleDark;
 
 
 
-    c[ImGuiCol_SliderGrab] = bluePrimary;
-
-    c[ImGuiCol_SliderGrabActive] = blueLight;
+    c[ImGuiCol_CheckMark] = purplePrimary;
 
 
 
-    c[ImGuiCol_Button] = bluePrimary;
+    c[ImGuiCol_SliderGrab] = purplePrimary;
 
-    c[ImGuiCol_ButtonHovered] = blueLight;
-
-    c[ImGuiCol_ButtonActive] = blueDark;
+    c[ImGuiCol_SliderGrabActive] = purpleLight;
 
 
 
-    c[ImGuiCol_Header] = ImVec4(0.20f, 0.22f, 0.25f, 0.8f);
+    c[ImGuiCol_Button] = purplePrimary;
 
-    c[ImGuiCol_HeaderHovered] = ImVec4(0.25f, 0.27f, 0.30f, 0.9f);
+    c[ImGuiCol_ButtonHovered] = purpleLight;
 
-    c[ImGuiCol_HeaderActive] = bluePrimary;
+    c[ImGuiCol_ButtonActive] = purpleDark;
+
+
+
+    c[ImGuiCol_Header] = ImVec4(0.95f, 0.90f, 1.0f, 0.8f);
+
+    c[ImGuiCol_HeaderHovered] = ImVec4(0.98f, 0.93f, 1.0f, 0.9f);
+
+    c[ImGuiCol_HeaderActive] = purplePrimary;
 
 
 
     c[ImGuiCol_ResizeGrip] = ImVec4(0.3f, 0.35f, 0.4f, 0.8f);
 
-    c[ImGuiCol_ResizeGripHovered] = bluePrimary;
+    c[ImGuiCol_ResizeGripHovered] = purplePrimary;
 
-    c[ImGuiCol_ResizeGripActive] = blueDark;
+    c[ImGuiCol_ResizeGripActive] = purpleDark;
 
 
 
     c[ImGuiCol_Tab] = bgSecondary;
 
-    c[ImGuiCol_TabHovered] = ImVec4(0.22f, 0.24f, 0.27f, 0.8f);
+    c[ImGuiCol_TabHovered] = ImVec4(0.97f, 0.93f, 1.0f, 0.8f);
 
-    c[ImGuiCol_TabActive] = ImVec4(0.28f, 0.30f, 0.33f, 1.0f);
+    c[ImGuiCol_TabActive] = purplePrimary;
 
     c[ImGuiCol_TabUnfocused] = bgSecondary;
 
-    c[ImGuiCol_TabUnfocusedActive] = ImVec4(0.20f, 0.22f, 0.25f, 1.0f);
+    c[ImGuiCol_TabUnfocusedActive] = ImVec4(0.95f, 0.90f, 1.0f, 1.0f);
 
 
 
-    c[ImGuiCol_Text] = ImVec4(0.95f, 0.95f, 0.95f, 1.0f);
+    c[ImGuiCol_Text] = ImVec4(0.25f, 0.2f, 0.35f, 1.0f);
 
-    c[ImGuiCol_TextDisabled] = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-
-
-
-    c[ImGuiCol_Separator] = ImVec4(0.3f, 0.3f, 0.3f, 0.5f);
-
-    c[ImGuiCol_SeparatorHovered] = ImVec4(0.4f, 0.4f, 0.4f, 0.7f);
-
-    c[ImGuiCol_SeparatorActive] = ImVec4(0.5f, 0.5f, 0.5f, 0.9f);
+    c[ImGuiCol_TextDisabled] = ImVec4(0.6f, 0.55f, 0.65f, 1.0f);
 
 
 
-    c[ImGuiCol_Border] = ImVec4(0.3f, 0.3f, 0.3f, 0.4f);
+    c[ImGuiCol_Separator] = ImVec4(0.7f, 0.65f, 0.8f, 0.5f);
+
+    c[ImGuiCol_SeparatorHovered] = ImVec4(0.6f, 0.55f, 0.7f, 0.7f);
+
+    c[ImGuiCol_SeparatorActive] = ImVec4(0.5f, 0.45f, 0.6f, 0.9f);
+
+
+
+    c[ImGuiCol_Border] = ImVec4(0.75f, 0.70f, 0.85f, 0.5f);
 
     c[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -397,9 +397,9 @@ static void ForceStyle() {
 
     c[ImGuiCol_NavWindowingHighlight] = ImVec4(0.4f, 0.6f, 0.9f, 0.4f);
 
-    c[ImGuiCol_NavWindowingDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.2f);
+    c[ImGuiCol_NavWindowingDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.2f);
 
-    c[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.4f);
+    c[ImGuiCol_ModalWindowDimBg] = ImVec4(0.7f, 0.7f, 0.7f, 0.4f);
 
 
 
@@ -478,7 +478,7 @@ static void DrawUI() {
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleWidth) * 0.5f);
     ImGui::PushFont(g_UIFont);
     ImGui::SetWindowFontScale(1.3f);
-    ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "Zoom Mod");
+    ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zoom Mod");
     ImGui::SetWindowFontScale(1.0f);
     ImGui::PopFont();
     ImGui::Dummy(ImVec2(0, 15));
@@ -489,11 +489,11 @@ static void DrawUI() {
     // Large Zoom Button (Outside settings)
     ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 200) * 0.5f);
     if (state.zooming) {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.45f, 0.7f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.75f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
     } else {
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.35f, 0.55f, 0.85f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.45f, 0.65f, 0.95f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
     }
 
     ImVec2 bigButtonSize = ImVec2(200, 120);
@@ -528,7 +528,7 @@ static void DrawUI() {
             if (!state.enabled) g_zoomState.zooming = false;
         }
         ImGui::SameLine(ImGui::GetWindowWidth() - 70);
-        ImGui::PushStyleColor(ImGuiCol_Text, state.enabled ? ImVec4(0.4f, 0.7f, 1.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_Text, state.enabled ? ImVec4(0.6f, 0.4f, 0.85f, 1.0f) : ImVec4(0.5f, 0.45f, 0.6f, 1.0f));
         ImGui::Text(state.enabled ? "Active" : "Inactive");
         ImGui::PopStyleColor();
 
@@ -548,8 +548,9 @@ static void DrawUI() {
         ImGui::Dummy(ImVec2(0, 5));
 
         float zoomPercent = ((float)(state.maxZoom - state.zoomLevel) / (float)(state.maxZoom - state.minZoom)) * 100.0f;
-        ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.35f, 0.55f, 0.85f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.45f, 0.65f, 0.95f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+        
+                ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
         if (ImGui::SliderFloat("##zoomlevel", &zoomPercent, 0.0f, 100.0f, "%.0f%%")) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.zoomLevel = state.maxZoom - (uint64_t)((zoomPercent / 100.0f) * (float)(state.maxZoom - state.minZoom));
@@ -567,9 +568,9 @@ static void DrawUI() {
         ImGui::Text("Status: ");
         ImGui::SameLine();
         if (state.zooming) {
-            ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "Zooming");
+            ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zooming");
         } else {
-            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "Normal");
+            ImGui::TextColored(ImVec4(0.6f, 0.55f, 0.7f, 1.0f), "Normal");
         }
     }
     ImGui::EndChild();
@@ -587,11 +588,11 @@ static void DrawUI() {
             ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground);
 
         if (state.zooming) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.45f, 0.7f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.75f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
         } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.35f, 0.55f, 0.85f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.45f, 0.65f, 0.95f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
         }
 
         ImVec2 zoomButtonSize = ImVec2(100, 100);
