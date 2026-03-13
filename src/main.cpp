@@ -451,7 +451,7 @@ static void DrawUI() {
     ImGuiIO& io = ImGui::GetIO();
     const float pad = 20;
     ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_Once);
-    // Window will auto-resize to fit content
+    ImGui::SetNextWindowSizeConstraints(ImVec2(550, 200), ImVec2(io.DisplaySize.x * 0.8f, io.DisplaySize.y * 0.35f));
 
     // Show a small button to reopen the window if it's closed
     if (!g_ShowUI) {
@@ -528,7 +528,7 @@ static void DrawUI() {
     ImGui::Dummy(ImVec2(0, 8));
 
     // Settings Section
-    ImGui::BeginChild("Settings", ImVec2(0, 0), true);
+    ImGui::BeginChild("Settings", ImVec2(-1, 220), true);
     {
         // Enable/Disable
         ImGui::AlignTextToFramePadding();
