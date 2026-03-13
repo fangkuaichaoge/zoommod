@@ -582,62 +582,60 @@ static void DrawUI() {
             ImGui::TextColored(ImVec4(0.6f, 0.55f, 0.7f, 1.0f), "Normal");
         }
     }
-    ImGui::EndChild();
-
-    ImGui::End();
-    if (g_UIFont) ImGui::PopFont();
-}
-
-    // Independent Zoom Button (Always visible)
-    if (g_ShowUI) {
-        ZoomState state;
-        { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
-
-        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 120, io.DisplaySize.y - 120), ImGuiCond_Always);
-        ImGui::Begin("##IndependentZoom", nullptr,
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-            ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground);
-
-        if (state.zooming) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
-        } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
-        }
-
-        ImVec2 zoomButtonSize = ImVec2(100, 100);
-        bool zoomButtonClicked = ImGui::Button(state.zooming ? "Z" : "Z", zoomButtonSize);
-        ImGui::PopStyleColor(2);
-
-        // Handle independent zoom button toggle
-        if (zoomButtonClicked) {
-            std::lock_guard<std::mutex> lock(g_zoomMutex);
-            g_zoomState.zooming = !g_zoomState.zooming;
-            if (g_zoomState.animated) {
-                if (g_zoomState.zooming) {
-                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                    g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
-                } else {
-                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
-                    g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+        ImGui::EndChild();
+    
+        ImGui::End();
+    
+        // Independent Zoom Button (Always visible)
+        if (g_ShowUI) {
+            ZoomState state;
+            { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
+    
+            ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 120, io.DisplaySize.y - 120), ImGuiCond_Always);
+            ImGui::Begin("##IndependentZoom", nullptr,
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground);
+    
+            if (state.zooming) {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
+            } else {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
+            }
+    
+            ImVec2 zoomButtonSize = ImVec2(100, 100);
+            bool zoomButtonClicked = ImGui::Button(state.zooming ? "Z" : "Z", zoomButtonSize);
+            ImGui::PopStyleColor(2);
+    
+            // Handle independent zoom button toggle
+            if (zoomButtonClicked) {
+                std::lock_guard<std::mutex> lock(g_zoomMutex);
+                g_zoomState.zooming = !g_zoomState.zooming;
+                if (g_zoomState.animated) {
+                    if (g_zoomState.zooming) {
+                        uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                        g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+                    } else {
+                        uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                        g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+                    }
                 }
             }
+    
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("Toggle Zoom");
+            }
+    
+            ImGui::End();
         }
-
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Toggle Zoom");
-        }
-
-        ImGui::End();
+    
+        if (g_UIFont) ImGui::PopFont();
     }
-
-    if (g_UIFont) ImGui::PopFont();
-}
-
-// ===================== GL State Protection =====================
-struct GLState {
-    GLint prog, tex, aTex, aBuf, eBuf, vao, fbo, vp[4], sc[4], bSrc, bDst, bSrcA, bDstA;
+    
+    // ===================== GL State Protection =====================
+    struct GLState {
+        GLint prog, tex, aTex, aBuf, eBuf, vao, fbo, vp[4], sc[4], bSrc, bDst, bSrcA, bDstA;
     GLboolean blend, cull, depth, scissor, stencil, dither;
     GLint frontFace, activeTexture;
 };
