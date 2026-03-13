@@ -1,3 +1,16 @@
+/*
+ * Portions of this file are derived from LeviLaunchroid
+ * Repository: https://github.com/LiteLDev/LeviLaunchroid
+ * Copyright 2024 LiteLDev / LeviMC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Modified by [fangkuaichaoge] 2026.
+ */
 // ===================== System Header Files =====================
 #include <jni.h>
 #include <android/input.h>
