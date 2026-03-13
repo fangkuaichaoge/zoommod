@@ -72,7 +72,7 @@ public:
 // ===================== Zoom State =====================
 struct ZoomState {
     bool enabled = true;
-    bool animated = true;
+    bool animated = false;
     bool zooming = false;
     uint64_t zoomLevel = 5345000000ULL;
     uint64_t lastClientZoom = 0;
