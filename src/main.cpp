@@ -443,6 +443,7 @@ static void ForceStyle() {
 
 // ===================== UI Interface =====================
 static bool g_ShowUI = true;
+static bool g_Expanded = true;
 
 static void DrawUI() {
     ForceStyle();
@@ -451,7 +452,7 @@ static void DrawUI() {
     ImGuiIO& io = ImGui::GetIO();
     const float pad = 20;
     ImGui::SetNextWindowPos(ImVec2(pad, pad), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(550, 200), ImVec2(io.DisplaySize.x * 0.8f, io.DisplaySize.y * 0.35f));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(480, 80), ImVec2(io.DisplaySize.x * 0.9f, io.DisplaySize.y * 0.4f));
 
     // Show a small button to reopen the window if it's closed
     if (!g_ShowUI) {
@@ -471,33 +472,40 @@ static void DrawUI() {
     // Main window is open
     ImGui::Begin("Zoom Mod", &g_ShowUI,
         ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings |
-        ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoCollapse);
-
-    // Title with close button
-    float titleWidth = ImGui::CalcTextSize("Zoom Mod").x;
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleWidth) * 0.5f);
-    ImGui::PushFont(g_UIFont);
-    ImGui::SetWindowFontScale(1.3f);
-    ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zoom Mod");
-    ImGui::SetWindowFontScale(1.0f);
-    
-    // Custom close button
-    ImGui::SameLine(ImGui::GetWindowWidth() - 35);
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.93f, 0.88f, 0.98f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.98f, 0.95f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.55f, 0.7f, 1.0f));
-    if (ImGui::Button("✕", ImVec2(24, 24))) {
-        g_ShowUI = false;
-    }
-    ImGui::PopStyleColor(3);
-    ImGui::PopFont();
-    ImGui::Dummy(ImVec2(0, 10));
+        ImGuiWindowFlags_NoFocusOnAppearing);
 
     ZoomState state;
     { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
 
-    // Large Zoom Button (Outside settings)
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - 160) * 0.5f);
+    // Header row
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 0));
+    
+    // Collapse/Expand button
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.93f, 0.88f, 0.98f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.98f, 0.95f, 1.0f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.55f, 0.7f, 1.0f));
+    if (ImGui::Button(g_Expanded ? "−" : "+", ImVec2(26, 26))) {
+        g_Expanded = !g_Expanded;
+    }
+    ImGui::PopStyleColor(3);
+    
+    // Title
+    ImGui::SameLine();
+    ImGui::PushFont(g_UIFont);
+    ImGui::SetWindowFontScale(1.2f);
+    ImGui::TextColored(ImVec4(0.6f, 0.4f, 0.85f, 1.0f), "Zoom Mod");
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PopFont();
+    ImGui::PopStyleVar();
+
+    ImGui::Dummy(ImVec2(0, 8));
+
+    // Zoom Button (always visible)
+    float windowWidth = ImGui::GetWindowWidth();
+    float buttonWidth = windowWidth * 0.4f;
+    if (buttonWidth < 120) buttonWidth = 120;
+    ImGui::SetCursorPosX((windowWidth - buttonWidth) * 0.5f);
+    
     if (state.zooming) {
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
@@ -506,11 +514,9 @@ static void DrawUI() {
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
     }
 
-    ImVec2 bigButtonSize = ImVec2(160, 80);
-    bool buttonClicked = ImGui::Button(state.zooming ? "Zooming" : "Zoom", bigButtonSize);
+    bool buttonClicked = ImGui::Button(state.zooming ? "Zooming" : "Zoom", ImVec2(buttonWidth, 60));
     ImGui::PopStyleColor(2);
 
-    // Handle toggle zoom
     if (buttonClicked) {
         std::lock_guard<std::mutex> lock(g_zoomMutex);
         g_zoomState.zooming = !g_zoomState.zooming;
@@ -525,53 +531,51 @@ static void DrawUI() {
         }
     }
 
-    ImGui::Dummy(ImVec2(0, 8));
-
-    // Settings Section
-    ImGui::BeginChild("Settings", ImVec2(-1, 220), true);
-    {
-        // Enable/Disable
+    if (g_Expanded) {
+        ImGui::Dummy(ImVec2(0, 10));
+        
+        // Settings section (horizontal layout)
+        ImGui::BeginChild("Settings", ImVec2(0, 0), true);
+        
+        // Row 1: Enabled and Animated (side by side)
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 8));
+        
+        // Enabled
         ImGui::AlignTextToFramePadding();
         if (ImGui::Checkbox("Enabled", &state.enabled)) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.enabled = state.enabled;
             if (!state.enabled) g_zoomState.zooming = false;
         }
-        ImGui::SameLine(ImGui::GetWindowWidth() - 70);
-        ImGui::PushStyleColor(ImGuiCol_Text, state.enabled ? ImVec4(0.6f, 0.4f, 0.85f, 1.0f) : ImVec4(0.5f, 0.45f, 0.6f, 1.0f));
-        ImGui::Text(state.enabled ? "Active" : "Inactive");
-        ImGui::PopStyleColor();
-
-        ImGui::Dummy(ImVec2(0, 8));
-
+        
         // Animated
+        ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
-        if (ImGui::Checkbox("Animated Zoom", &state.animated)) {
+        if (ImGui::Checkbox("Animated", &state.animated)) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.animated = state.animated;
         }
-
+        ImGui::PopStyleVar();
+        
         ImGui::Dummy(ImVec2(0, 8));
-
-        // Zoom Level Slider
-        ImGui::Text("Zoom Level");
-        ImGui::Dummy(ImVec2(0, 5));
-
+        
+        // Row 2: Zoom Level slider
         float zoomPercent = ((float)(state.maxZoom - state.zoomLevel) / (float)(state.maxZoom - state.minZoom)) * 100.0f;
+        ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 50);
         ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
-        if (ImGui::SliderFloat("##zoomlevel", &zoomPercent, 0.0f, 100.0f, "%.0f%%")) {
+        if (ImGui::SliderFloat("##zoomlevel", &zoomPercent, 0.0f, 100.0f, "Zoom: %.0f%%")) {
             std::lock_guard<std::mutex> lock(g_zoomMutex);
             g_zoomState.zoomLevel = state.maxZoom - (uint64_t)((zoomPercent / 100.0f) * (float)(state.maxZoom - state.minZoom));
         }
         ImGui::PopStyleColor(2);
-
-        ImGui::Dummy(ImVec2(0, 10));
-
-        // Status
-        ImGui::Separator();
+        ImGui::PopItemWidth();
+        
         ImGui::Dummy(ImVec2(0, 8));
-
+        
+        // Row 3: Status
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2(0, 6));
         float statusText = ImGui::CalcTextSize("Status: Normal").x;
         ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - statusText) * 0.5f);
         ImGui::Text("Status: ");
@@ -581,15 +585,56 @@ static void DrawUI() {
         } else {
             ImGui::TextColored(ImVec4(0.6f, 0.55f, 0.7f, 1.0f), "Normal");
         }
-    }
+        
         ImGui::EndChild();
-    
+    }
+
+    ImGui::End();
+
+    // Independent Zoom Button (Always visible)
+    if (g_ShowUI) {
+        ZoomState state;
+        { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
+
+        ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 110, io.DisplaySize.y - 110), ImGuiCond_Always);
+        ImGui::Begin("##IndependentZoom", nullptr,
+            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBackground);
+
+        if (state.zooming) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.45f, 0.3f, 0.7f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.35f, 0.75f, 1.0f));
+        } else {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.6f, 0.4f, 0.85f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.75f, 0.55f, 0.95f, 1.0f));
+        }
+
+        bool zoomButtonClicked = ImGui::Button("Z", ImVec2(80, 80));
+        ImGui::PopStyleColor(2);
+
+        if (zoomButtonClicked) {
+            std::lock_guard<std::mutex> lock(g_zoomMutex);
+            g_zoomState.zooming = !g_zoomState.zooming;
+            if (g_zoomState.animated) {
+                if (g_zoomState.zooming) {
+                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                    g_transition.startTransition(g_zoomState.lastClientZoom, g_zoomState.zoomLevel, clamp(100, diff / 150000, 250));
+                } else {
+                    uint64_t diff = unsignedDiff(g_zoomState.lastClientZoom, g_zoomState.zoomLevel);
+                    g_transition.startTransition(g_zoomState.zoomLevel, g_zoomState.lastClientZoom, clamp(100, diff / 150000, 250));
+                }
+            }
+        }
+
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Toggle Zoom");
+        }
+
         ImGui::End();
-    
-        // Independent Zoom Button (Always visible)
-        if (g_ShowUI) {
-            ZoomState state;
-            { std::lock_guard<std::mutex> lock(g_zoomMutex); state = g_zoomState; }
+    }
+
+    if (g_UIFont) ImGui::PopFont();
+}
     
             ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 120, io.DisplaySize.y - 120), ImGuiCond_Always);
             ImGui::Begin("##IndependentZoom", nullptr,
@@ -631,9 +676,12 @@ static void DrawUI() {
         }
     
         if (g_UIFont) ImGui::PopFont();
-    }
     
-    // ===================== GL State Protection =====================
+        }
+    
+        
+    
+        // ===================== GL State Protection =====================
     struct GLState {
         GLint prog, tex, aTex, aBuf, eBuf, vao, fbo, vp[4], sc[4], bSrc, bDst, bSrcA, bDstA;
     GLboolean blend, cull, depth, scissor, stencil, dither;
