@@ -265,10 +265,10 @@ static bool findAndHookCameraAPI() {
 // ===================== ImGui Render Global State =====================
 static bool g_Initialized = false;
 static bool g_ContextLost = false;
-static int g_LastWidth = 0; // <--- 保险3：记录上次尺寸
+static int g_LastWidth = 0;
 static int g_LastHeight = 0;
 static int g_Width = 0, g_Height = 0;
-static EGLDisplay g_LastDisplay = EGL_NO_DISPLAY; // <--- 保险1：记录Display
+static EGLDisplay g_LastDisplay = EGL_NO_DISPLAY;
 static EGLContext g_TargetContext = EGL_NO_CONTEXT;
 static EGLSurface g_TargetSurface = EGL_NO_SURFACE;
 static ImFont* g_UIFont = nullptr;
@@ -659,7 +659,7 @@ static void RestoreGL(const GLState& s) {
     glFrontFace(s.frontFace);
 }
 
-// ===================== 保险2：ImGui 健康检查 =====================
+// ===================== ImGui 健康检查 =====================
 static bool IsImGuiHealthy() {
     if (!g_Initialized) return false;
     if (g_Width <= 0 || g_Height <= 0) return false;
@@ -718,7 +718,7 @@ static void Setup() {
 }
 
 static void Render() {
-    // 保险2：健康检查
+    // 健康检查
     if (!IsImGuiHealthy()) {
         LOGW("ImGui not healthy, skipping render");
         return;
@@ -795,16 +795,29 @@ static EGLBoolean hook_eglSwapBuffers(EGLDisplay d, EGLSurface s) {
     return orig_eglSwapBuffers(d, s);
 }
 
-// ===================== Input Hook (完全保留) =====================
+// ===================== Input Hook (修复版：游戏和ImGui都能操作) =====================
 static void hook_Input1(void* thiz, void* a1, void* a2) {
+    // 【关键修复】：这里 thiz 是 InputConsumer*，不是 AInputEvent*！
+    // 所以我们只调用原函数，不传给 ImGui，避免干扰游戏触摸
     if (orig_Input1) orig_Input1(thiz, a1, a2);
-    if (thiz && g_Initialized) ImGui_ImplAndroid_HandleInputEvent((AInputEvent*)thiz);
 }
 
 static int32_t hook_Input2(void* thiz, void* a1, bool a2, long a3, uint32_t* a4, AInputEvent** e) {
+    // 1. 永远先调用原函数，保证游戏 100% 能收到触摸
     int32_t r = orig_Input2 ? orig_Input2(thiz, a1, a2, a3, a4, e) : 0;
-    if (r == 0 && e && *e && g_Initialized)
+
+    // 2. 再把事件传给 ImGui（让 ImGui 自己决定要不要处理）
+    if (e && *e && g_Initialized) {
+        ImGuiIO& io = ImGui::GetIO();
+        
+        // 【关键逻辑】：
+        // 我们先传给 ImGui，让它更新内部状态
+        // 但我们不拦截游戏的事件返回值，保证游戏永远能操作
         ImGui_ImplAndroid_HandleInputEvent(*e);
+    }
+
+    // 3. 【最重要】：永远返回原函数的返回值，不做任何拦截
+    // 这样游戏该干嘛干嘛，ImGui 只是“旁听”触摸事件
     return r;
 }
 
