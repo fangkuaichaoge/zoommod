@@ -30,7 +30,6 @@
 #define LOG_TAG "ZoomMod"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 
 // ===================== Transition Animation =====================
 class Transition {
@@ -264,11 +263,7 @@ static bool findAndHookCameraAPI() {
 
 // ===================== ImGui Render Global State =====================
 static bool g_Initialized = false;
-static bool g_ContextLost = false;
-static int g_LastWidth = 0;
-static int g_LastHeight = 0;
 static int g_Width = 0, g_Height = 0;
-static EGLDisplay g_LastDisplay = EGL_NO_DISPLAY;
 static EGLContext g_TargetContext = EGL_NO_CONTEXT;
 static EGLSurface g_TargetSurface = EGL_NO_SURFACE;
 static ImFont* g_UIFont = nullptr;
@@ -550,7 +545,7 @@ static void DrawUI() {
         ImGui::Separator();
         ImGui::Dummy(ImVec2(0, 8));
 
-        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Status: ").x - ImGui::CalcTextSize("Normal").x - 8) * 0.5f);
+        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("Status").x - ImGui::CalcTextSize("Normal").x - 8) * 0.5f);
         ImGui::TextColored(ImVec4(0.55f, 0.48f, 0.62f, 1.0f), "Status: ");
         ImGui::SameLine();
         if (state.zooming) {
@@ -659,73 +654,35 @@ static void RestoreGL(const GLState& s) {
     glFrontFace(s.frontFace);
 }
 
-// ===================== ImGui 健康检查 =====================
-static bool IsImGuiHealthy() {
-    if (!g_Initialized) return false;
-    if (g_Width <= 0 || g_Height <= 0) return false;
-    if (g_TargetContext == EGL_NO_CONTEXT) return false;
-    if (g_TargetSurface == EGL_NO_SURFACE) return false;
-    return true;
-}
-
-// ===================== ImGui Initialization (终极加固版) =====================
+// ===================== ImGui Initialization =====================
 static void Setup() {
-    // 如果上下文丢失，先安全销毁旧的
-    if (g_ContextLost && g_Initialized) {
-        LOGI("Context lost, destroying old ImGui resources");
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplAndroid_Shutdown();
-        ImGui::DestroyContext();
-        g_Initialized = false;
-        g_ContextLost = false;
-        g_UIFont = nullptr;
-        g_TargetContext = EGL_NO_CONTEXT;
-        g_TargetSurface = EGL_NO_SURFACE;
-        g_LastDisplay = EGL_NO_DISPLAY;
-        g_LastWidth = 0;
-        g_LastHeight = 0;
-        LOGI("Old ImGui resources destroyed");
-    }
+    if (g_Initialized || g_Width <= 0 || g_Height <= 0) return;
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
 
-    // 初始化（或重新初始化）
-    if (!g_Initialized || g_Width <= 0 || g_Height <= 0) {
-        LOGI("Initializing ImGui (width: %d, height: %d)", g_Width, g_Height);
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.IniFilename = nullptr;
-        io.LogFilename = nullptr;
+    // 根据屏幕高度计算字体缩放比例 (基准 720p)
+    float baseScale = (float)g_Height / 720.0f;
+    g_FontScale = std::clamp(baseScale, 1.0f, 2.0f);
 
-        // 根据屏幕高度计算字体缩放比例 (基准 720p)
-        float baseScale = (float)g_Height / 720.0f;
-        g_FontScale = std::clamp(baseScale, 1.0f, 2.0f);
+    // 设置字体大小 (基准 20px，根据缩放调整)
+    ImFontConfig cfg;
+    cfg.SizePixels = (float)(int)(20.0f * g_FontScale);
+    cfg.OversampleH = cfg.OversampleV = 2;
+    cfg.PixelSnapH = true;
+    g_UIFont = io.Fonts->AddFontDefault(&cfg);
 
-        // 设置字体大小 (基准 20px，根据缩放调整)
-        ImFontConfig cfg;
-        cfg.SizePixels = (float)(int)(20.0f * g_FontScale);
-        cfg.OversampleH = cfg.OversampleV = 2;
-        cfg.PixelSnapH = true;
-        g_UIFont = io.Fonts->AddFontDefault(&cfg);
+    ImGui_ImplAndroid_Init(nullptr);
+    ImGui_ImplOpenGL3_Init("#version 300 es");
 
-        ImGui_ImplAndroid_Init(nullptr);
-        ImGui_ImplOpenGL3_Init("#version 300 es");
-
-        SetupStyle();
-        g_Initialized = true;
-        g_LastWidth = g_Width;
-        g_LastHeight = g_Height;
-        LOGI("ImGui initialized successfully");
-    }
+    SetupStyle();
+    g_Initialized = true;
 }
 
 static void Render() {
-    // 健康检查
-    if (!IsImGuiHealthy()) {
-        LOGW("ImGui not healthy, skipping render");
-        return;
-    }
-
-    GLState s; 
-    SaveGL(s);
+    if (!g_Initialized) return;
+    GLState s; SaveGL(s);
 
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)g_Width, (float)g_Height);
@@ -741,10 +698,9 @@ static void Render() {
     RestoreGL(s);
 }
 
-// ===================== EGL Render Hook (终极保险版) =====================
+// ===================== EGL Render Hook (只加了一层核心保护) =====================
 static EGLBoolean hook_eglSwapBuffers(EGLDisplay d, EGLSurface s) {
     if (!orig_eglSwapBuffers) return orig_eglSwapBuffers(d, s);
-    
     EGLContext ctx = eglGetCurrentContext();
     if (ctx == EGL_NO_CONTEXT) return orig_eglSwapBuffers(d, s);
 
@@ -753,74 +709,48 @@ static EGLBoolean hook_eglSwapBuffers(EGLDisplay d, EGLSurface s) {
     eglQuerySurface(d, s, EGL_HEIGHT, &h);
     if (w < 500 || h < 500) return orig_eglSwapBuffers(d, s);
 
-    // 保险1：检测 Display 变化
-    if (g_LastDisplay != EGL_NO_DISPLAY && g_LastDisplay != d) {
-        LOGI("EGL Display changed, marking for reset");
-        g_ContextLost = true;
-    }
-    g_LastDisplay = d;
-
-    // 保险3：检测尺寸变化
-    if (g_LastWidth != 0 && g_LastHeight != 0 && (g_LastWidth != w || g_LastHeight != h)) {
-        LOGI("Surface size changed (%dx%d -> %dx%d)", g_LastWidth, g_LastHeight, w, h);
-        g_ContextLost = true;
-    }
-
-    // 检测上下文变化（切后台/切回来）
     if (g_TargetContext == EGL_NO_CONTEXT) {
         EGLint buf;
         eglQuerySurface(d, s, EGL_RENDER_BUFFER, &buf);
         if (buf == EGL_BACK_BUFFER) {
             g_TargetContext = ctx;
             g_TargetSurface = s;
-            LOGI("New EGL context acquired");
         }
     }
 
+    // ==========================================
+    // 【唯一的保护】：如果 Context/Surface 变了，强制重置
+    // ==========================================
     if (ctx != g_TargetContext || s != g_TargetSurface) {
-        // 上下文变了 = 后台切回来，标记丢失
+        // 切后台了，标记 ImGui 需要重新初始化
         if (g_Initialized) {
-            LOGI("EGL context/surface changed, marking for reset");
-            g_ContextLost = true;
+            LOGI("EGL context changed, resetting ImGui");
+            // 简单的重置：把 g_Initialized 设为 false
+            // 下次 Setup() 会自动重新创建
+            g_Initialized = false;
+            g_TargetContext = EGL_NO_CONTEXT;
+            g_TargetSurface = EGL_NO_SURFACE;
         }
-        g_TargetContext = EGL_NO_CONTEXT;
-        g_TargetSurface = EGL_NO_SURFACE;
         return orig_eglSwapBuffers(d, s);
     }
 
-    g_Width = w; 
-    g_Height = h;
+    g_Width = w; g_Height = h;
     Setup();
     Render();
     return orig_eglSwapBuffers(d, s);
 }
 
-// ===================== Input Hook (终极最终修复版) =====================
+// ===================== Input Hook (完全没动) =====================
 static void hook_Input1(void* thiz, void* a1, void* a2) {
-    // 这里只调用原函数，绝对不碰 ImGui
     if (orig_Input1) orig_Input1(thiz, a1, a2);
+    if (thiz && g_Initialized) ImGui_ImplAndroid_HandleInputEvent((AInputEvent*)thiz);
 }
 
 static int32_t hook_Input2(void* thiz, void* a1, bool a2, long a3, uint32_t* a4, AInputEvent** e) {
-    // 1. 【永远第一步】：先调用原函数，保证游戏 100% 能收到触摸
-    int32_t originalResult = orig_Input2 ? orig_Input2(thiz, a1, a2, a3, a4, e) : 0;
-
-    // 2. 【安全检查】：确保事件和ImGui都有效
-    if (e && *e && g_Initialized) {
-        AInputEvent* event = *e;
-        int32_t eventType = AInputEvent_getType(event);
-        
-        // 3. 【关键】：只处理触摸事件 (MotionEvent)
-        if (eventType == AINPUT_EVENT_TYPE_MOTION) {
-            // 4. 【核心修复】：直接把事件传给 ImGui，让它自己决定要不要处理
-            // 我们不做任何拦截，不修改任何返回值
-            ImGui_ImplAndroid_HandleInputEvent(event);
-        }
-    }
-
-    // 5. 【最重要】：永远、永远、永远返回原函数的返回值！
-    // 这样游戏该干嘛干嘛，完全不受影响
-    return originalResult;
+    int32_t r = orig_Input2 ? orig_Input2(thiz, a1, a2, a3, a4, e) : 0;
+    if (r == 0 && e && *e && g_Initialized)
+        ImGui_ImplAndroid_HandleInputEvent(*e);
+    return r;
 }
 
 static void HookInput() {
