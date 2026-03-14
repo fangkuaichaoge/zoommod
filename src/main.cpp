@@ -795,25 +795,32 @@ static EGLBoolean hook_eglSwapBuffers(EGLDisplay d, EGLSurface s) {
     return orig_eglSwapBuffers(d, s);
 }
 
-// ===================== Input Hook (最终修复版：ImGui和游戏都完美) =====================
+// ===================== Input Hook (终极最终修复版) =====================
 static void hook_Input1(void* thiz, void* a1, void* a2) {
-    // 这里只调用原函数，不碰 ImGui
+    // 这里只调用原函数，绝对不碰 ImGui
     if (orig_Input1) orig_Input1(thiz, a1, a2);
 }
 
 static int32_t hook_Input2(void* thiz, void* a1, bool a2, long a3, uint32_t* a4, AInputEvent** e) {
-    // 【关键修复1】：先把事件传给 ImGui！
-    // 不管原函数怎么样，先让 ImGui 收到触摸
+    // 1. 【永远第一步】：先调用原函数，保证游戏 100% 能收到触摸
+    int32_t originalResult = orig_Input2 ? orig_Input2(thiz, a1, a2, a3, a4, e) : 0;
+
+    // 2. 【安全检查】：确保事件和ImGui都有效
     if (e && *e && g_Initialized) {
-        ImGui_ImplAndroid_HandleInputEvent(*e);
+        AInputEvent* event = *e;
+        int32_t eventType = AInputEvent_getType(event);
+        
+        // 3. 【关键】：只处理触摸事件 (MotionEvent)
+        if (eventType == AINPUT_EVENT_TYPE_MOTION) {
+            // 4. 【核心修复】：直接把事件传给 ImGui，让它自己决定要不要处理
+            // 我们不做任何拦截，不修改任何返回值
+            ImGui_ImplAndroid_HandleInputEvent(event);
+        }
     }
 
-    // 【关键修复2】：再调用原函数，保证游戏能收到
-    int32_t r = orig_Input2 ? orig_Input2(thiz, a1, a2, a3, a4, e) : 0;
-
-    // 【关键修复3】：永远返回原函数的返回值，不做任何拦截
-    // 这样游戏该干嘛干嘛，ImGui 也能收到事件
-    return r;
+    // 5. 【最重要】：永远、永远、永远返回原函数的返回值！
+    // 这样游戏该干嘛干嘛，完全不受影响
+    return originalResult;
 }
 
 static void HookInput() {
